@@ -99,17 +99,19 @@ function App() {
     }));
   };
 
+  const formatProductData = product => ({
+    ...product,
+    origin_price: Number(product.origin_price),
+    price: Number(product.price),
+    is_enabled: product.is_enabled ? 1 : 0,
+  });
+
   // 新增產品
   const createProduct = async () => {
     try {
       // 傳值data時，需包裝成物件{data: {}}，並將tempProduct的origin_price、price轉換為數字，is_enabled轉換為數字0或1
       await axios.post(`${baseURL}/v2/api/${apiPath}/admin/product`, {
-        data: {
-          ...tempProduct,
-          origin_price: Number(tempProduct.origin_price),
-          price: Number(tempProduct.price),
-          is_enabled: tempProduct.is_enabled ? 1 : 0,
-        },
+        data: formatProductData(tempProduct),
       });
     } catch (error) {
       console.error(error);
@@ -170,31 +172,25 @@ function App() {
   };
 
   // Modal 控制
+  // imagesUrl雙重確認函式 - 確保即使api回傳的product物件中imagesUrl為空陣列或非陣列，
+  // 也能正確設定tempProduct的imagesUrl為至少包含一個空字串的陣列，避免後續操作出錯
+  const normalizeProduct = (p = {}) => ({
+    ...defaultModalState,
+    ...p,
+    imagesUrl:
+      Array.isArray(p.imagesUrl) && p.imagesUrl.length > 0
+        ? [...p.imagesUrl]
+        : [''],
+  });
   // ProductModal
   const handleOpenProductModal = (mode, product = defaultModalState) => {
+    console.log(product);
     setModalMode(mode);
-    // switch (mode) {
-    //   case 'create':
-    //     setTempProduct(defaultModalState);
-    //     break;
-    //   case 'edit':
-    //     setTempProduct(product || defaultModalState);
-    //     break;
-    //   default:
-    //     break;
-    // }
-    // setTempProduct(product || defaultModalState); // 簡化switch，新增就使用預設值defaultModalState處理
-    // setTempProduct(
-    //   Object.keys(product).length > 0 ? product : defaultModalState
-    // ); // 避免 api 回傳 product 為空物件時，無法正確設定tempProduct更保險
-    //handleOpenProductModal 邏輯可以更乾淨
-    setTempProduct(product?.id ? { ...product } : defaultModalState);
-    // Modal.getInstance(productModalRef.current).show();
+    setTempProduct(normalizeProduct(product));
     const modal = Modal.getOrCreateInstance(productModalRef.current);
     modal.show();
   };
   const handleCloseProductModal = () => {
-    // Modal.getInstance(productModalRef.current).hide();
     const modal = Modal.getOrCreateInstance(productModalRef.current);
     modal.hide();
   };
@@ -204,12 +200,10 @@ function App() {
       // 避免 api 回傳 product 為空物件時，無法正確設定tempProduct更保險
       product && Object.keys(product).length > 0 ? product : defaultModalState
     );
-    // Modal.getInstance(deleteModalRef.current).show();
     const modal = Modal.getOrCreateInstance(deleteModalRef.current);
     modal.show();
   };
   const handleCloseDeleteModal = () => {
-    // Modal.getInstance(deleteModalRef.current).hide();
     const modal = Modal.getOrCreateInstance(deleteModalRef.current);
     modal.hide();
   };
@@ -217,7 +211,7 @@ function App() {
   // useEffect 初始檢查登入
   useEffect(() => {
     const token = document.cookie.replace(
-      /(?:(?:^|.*;\s*)hexToken4\s*=\s*([^;]*).*$)|^.*$/,
+      /(?:(?:^|.*;\s*)hexToken_week3\s*=\s*([^;]*).*$)|^.*$/,
       '$1'
     );
     axios.defaults.headers.common['Authorization'] = token;

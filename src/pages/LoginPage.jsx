@@ -18,7 +18,7 @@ function LoginPage({ setIsAuth }) {
       .post(`${baseURL}/v2/admin/signin`, account)
       .then(res => {
         const { token, expired } = res.data;
-        document.cookie = `hexToken4=${token}; userLanguage=en; userPreference=darkMode; expires=${new Date(expired)}`; // 設定 cookie
+        document.cookie = `hexToken_week3=${token}; path=/; userLanguage=en; userPreference=darkMode; expires=${new Date(expired)}`; // 設定 cookie
         axios.defaults.headers.common['Authorization'] = token;
         // getProducts(); // 查詢商品資料列表
         setIsAuth(true); // 設定登入狀態
