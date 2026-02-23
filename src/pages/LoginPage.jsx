@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 
-function LoginPage({ getProducts, setIsAuth }) {
+function LoginPage({ setIsAuth }) {
   // 環境變數
   const baseURL = import.meta.env.VITE_BASE_URL;
   // const apiPath = import.meta.env.VITE_API_PATH;
@@ -20,7 +20,7 @@ function LoginPage({ getProducts, setIsAuth }) {
         const { token, expired } = res.data;
         document.cookie = `hexToken4=${token}; userLanguage=en; userPreference=darkMode; expires=${new Date(expired)}`; // 設定 cookie
         axios.defaults.headers.common['Authorization'] = token;
-        getProducts(); // 查詢商品資料列表
+        // getProducts(); // 查詢商品資料列表
         setIsAuth(true); // 設定登入狀態
       })
       .catch(error => {
@@ -75,7 +75,7 @@ function LoginPage({ getProducts, setIsAuth }) {
 
 // === 新增 `propTypes` 驗證 ===
 LoginPage.propTypes = {
-  getProducts: PropTypes.func.isRequired, // 確保 `getProducts` 是函式
+  // getProducts: PropTypes.func.isRequired, // 確保 `getProducts` 是函式
   setIsAuth: PropTypes.func.isRequired, // 確保 `setIsAuth` 是函式
 };
 

@@ -99,7 +99,6 @@ function App() {
     }));
   };
 
-  // 新增、編輯、刪除產品
   // 新增產品
   const createProduct = async () => {
     try {
@@ -185,17 +184,19 @@ function App() {
     //     break;
     // }
     // setTempProduct(product || defaultModalState); // 簡化switch，新增就使用預設值defaultModalState處理
-    setTempProduct(
-      Object.keys(product).length > 0 ? product : defaultModalState
-    ); // 避免 api 回傳 product 為空物件時，無法正確設定tempProduct更保險
-    // const modalInstance = Modal.getInstance(productModalRef.current);
-    // modalInstance.show();
-    Modal.getInstance(productModalRef.current).show();
+    // setTempProduct(
+    //   Object.keys(product).length > 0 ? product : defaultModalState
+    // ); // 避免 api 回傳 product 為空物件時，無法正確設定tempProduct更保險
+    //handleOpenProductModal 邏輯可以更乾淨
+    setTempProduct(product?.id ? { ...product } : defaultModalState);
+    // Modal.getInstance(productModalRef.current).show();
+    const modal = Modal.getOrCreateInstance(productModalRef.current);
+    modal.show();
   };
   const handleCloseProductModal = () => {
-    // const modalInstance = Modal.getInstance(productModalRef.current);
-    // modalInstance.hide();
-    Modal.getInstance(productModalRef.current).hide();
+    // Modal.getInstance(productModalRef.current).hide();
+    const modal = Modal.getOrCreateInstance(productModalRef.current);
+    modal.hide();
   };
   // DeleteModal
   const handleOpenDeleteModal = (product = defaultModalState) => {
@@ -203,10 +204,14 @@ function App() {
       // 避免 api 回傳 product 為空物件時，無法正確設定tempProduct更保險
       product && Object.keys(product).length > 0 ? product : defaultModalState
     );
-    Modal.getInstance(deleteModalRef.current).show();
+    // Modal.getInstance(deleteModalRef.current).show();
+    const modal = Modal.getOrCreateInstance(deleteModalRef.current);
+    modal.show();
   };
   const handleCloseDeleteModal = () => {
-    Modal.getInstance(deleteModalRef.current).hide();
+    // Modal.getInstance(deleteModalRef.current).hide();
+    const modal = Modal.getOrCreateInstance(deleteModalRef.current);
+    modal.hide();
   };
 
   // useEffect 初始檢查登入
@@ -218,7 +223,22 @@ function App() {
     axios.defaults.headers.common['Authorization'] = token;
     checkLogin();
   }, []);
+
+  useEffect(() => {
+    if (isAuth) {
+      getProducts();
+    }
+  }, [isAuth]);
+
   //useEffect Modal
+  // useEffect(() => {
+  //   if (productModalRef.current) {
+  //     new Modal(productModalRef.current, { backdrop: false });
+  //   }
+  //   if (deleteModalRef.current) {
+  //     new Modal(deleteModalRef.current, { backdrop: false });
+  //   }
+  // }, [productModalRef, deleteModalRef]);
   useEffect(() => {
     if (productModalRef.current) {
       new Modal(productModalRef.current, { backdrop: false });
@@ -226,7 +246,7 @@ function App() {
     if (deleteModalRef.current) {
       new Modal(deleteModalRef.current, { backdrop: false });
     }
-  }, [productModalRef, deleteModalRef]);
+  }, []);
 
   return (
     <>
@@ -296,7 +316,7 @@ function App() {
           </table>
         </div>
       ) : (
-        <LoginPage getProducts={getProducts} setIsAuth={setIsAuth} />
+        <LoginPage setIsAuth={setIsAuth} />
       )}
 
       <div

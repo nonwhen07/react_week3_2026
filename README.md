@@ -85,10 +85,10 @@ const formatProductData = (product) => ({
   is_enabled: product.is_enabled ? 1 : 0,
 });
 ```
-
 ---
 
 ## 🧰 技術棧
+
 - React 19
 - Vite 7
 - Axios
