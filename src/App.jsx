@@ -184,7 +184,6 @@ function App() {
   });
   // ProductModal
   const handleOpenProductModal = (mode, product = defaultModalState) => {
-    console.log(product);
     setModalMode(mode);
     setTempProduct(normalizeProduct(product));
     const modal = Modal.getOrCreateInstance(productModalRef.current);
@@ -469,6 +468,7 @@ function App() {
                         name='origin_price'
                         id='origin_price'
                         type='number'
+                        min={0}
                         className='form-control'
                         placeholder='請輸入原價'
                       />
@@ -483,6 +483,7 @@ function App() {
                         name='price'
                         id='price'
                         type='number'
+                        min={0}
                         className='form-control'
                         placeholder='請輸入售價'
                       />

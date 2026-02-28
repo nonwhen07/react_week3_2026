@@ -5,29 +5,60 @@ import PropTypes from 'prop-types';
 function LoginPage({ setIsAuth }) {
   // 環境變數
   const baseURL = import.meta.env.VITE_BASE_URL;
-  // const apiPath = import.meta.env.VITE_API_PATH;
   const [account, setAccount] = useState({
     username: 'example@test.com',
     password: 'example',
   });
+  const [errorMessage, setErrorMessage] = useState('');
 
   // 登入表單 - 登入submit事件
-  const handleLogin = e => {
+  // const handleLogin = e => {
+  //   e.preventDefault();
+  //   if (!account.username || !account.password) {
+  //     alert('請填寫完整登入資訊');
+  //     return;
+  //   }
+  //   axios
+  //     .post(`${baseURL}/v2/admin/signin`, account)
+  //     .then(res => {
+  //       const { token, expired } = res.data;
+  //       document.cookie = `hexToken_week3=${token}; path=/; expires=${new Date(expired).toUTCString()}`;
+  //       axios.defaults.headers.common['Authorization'] = token;
+  //       // getProducts(); // 查詢商品資料列表
+  //       setIsAuth(true); // 設定登入狀態
+  //     })
+  //     .catch(error => {
+  //       console.error(error);
+  //       // alert(error.response?.data?.message || '登入失敗');
+  //       setErrorMessage(error.response?.data?.message || '登入失敗');
+  //     });
+  // };
+
+  // 登入表單 - 登入submit事件（使用 async/await）
+  const handleLogin = async e => {
     e.preventDefault();
-    axios
-      .post(`${baseURL}/v2/admin/signin`, account)
-      .then(res => {
-        const { token, expired } = res.data;
-        document.cookie = `hexToken_week3=${token}; path=/; userLanguage=en; userPreference=darkMode; expires=${new Date(expired)}`; // 設定 cookie
-        axios.defaults.headers.common['Authorization'] = token;
-        // getProducts(); // 查詢商品資料列表
-        setIsAuth(true); // 設定登入狀態
-      })
-      .catch(error => {
-        console.error(error);
-        alert('登入失敗');
-      });
+
+    if (!account.username || !account.password) {
+      alert('請填寫完整登入資訊');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${baseURL}/v2/admin/signin`, account);
+
+      const { token, expired } = res.data;
+
+      document.cookie = `hexToken_week3=${token}; path=/; expires=${new Date(expired).toUTCString()}`;
+
+      axios.defaults.headers.common['Authorization'] = token;
+
+      setIsAuth(true);
+    } catch (error) {
+      // alert(error.response?.data?.message || '登入失敗');
+      setErrorMessage(error.response?.data?.message || '登入失敗');
+    }
   };
+
   // 登入表單 - Input變動
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -43,25 +74,27 @@ function LoginPage({ setIsAuth }) {
       <form onSubmit={handleLogin} className='d-flex flex-column gap-3'>
         <div className='form-floating mb-3'>
           <input
+            id='username'
             name='username'
             type='email'
             value={account.username || ''}
             onChange={handleInputChange}
             className='form-control'
-            id='username'
             placeholder='example@test.com'
+            required
           />
           <label htmlFor='username'>Email address</label>
         </div>
         <div className='form-floating'>
           <input
+            id='password'
             name='password'
             type='password'
             value={account.password || ''}
             onChange={handleInputChange}
             className='form-control'
-            id='password'
             placeholder='example'
+            required
           />
           <label htmlFor='password'>Password</label>
         </div>
@@ -69,13 +102,13 @@ function LoginPage({ setIsAuth }) {
           登入
         </button>
       </form>
+      {errorMessage && <div className='alert alert-danger'>{errorMessage}</div>}
     </div>
   );
 }
 
 // === 新增 `propTypes` 驗證 ===
 LoginPage.propTypes = {
-  // getProducts: PropTypes.func.isRequired, // 確保 `getProducts` 是函式
   setIsAuth: PropTypes.func.isRequired, // 確保 `setIsAuth` 是函式
 };
 
