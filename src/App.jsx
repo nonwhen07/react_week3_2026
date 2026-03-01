@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Modal } from 'bootstrap';
 import LoginPage from './pages/LoginPage';
@@ -30,42 +30,26 @@ function App() {
   };
   const [tempProduct, setTempProduct] = useState(defaultModalState);
   const [modalMode, setModalMode] = useState(null);
-  // API & 認證相關函式
-  const checkLogin = () => {
-    axios
-      .post(`${baseURL}/v2/api/user/check`)
-      .then(() => {
-        setIsAuth(true);
-        getProducts();
-      })
-      .catch(error => {
-        console.error(error);
-        setIsAuth(false);
-      });
-  };
-  const getProducts = () => {
-    axios
-      .get(`${baseURL}/v2/api/${apiPath}/admin/products`)
-      .then(res => {
-        setProducts(res.data.products);
-      })
-      .catch(error => {
-        console.error(error);
-      });
-    // getall寫法
-    // axios.get(`${baseURL}/v2/api/${apiPath}/admin/products/all`)
-    //   .then((res) => {
-    //     const productsData = res.data.products;
-    //     const productsArray = Object.keys(productsData).map((key) => ({
-    //       ...productsData[key], // 產品的詳細資料
-    //       id: key, // 把 id 加回來
-    //     }));
-    //     setProducts(productsArray);
-    //   })
-    //   .catch((error) => {
-    //     console.error(error);
-    //   });
-  };
+  // 開始前的 get API & 認證相關函式
+  const getProducts = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${baseURL}/v2/api/${apiPath}/admin/products`
+      );
+      setProducts(res.data.products);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [baseURL, apiPath]);
+  const checkLogin = useCallback(async () => {
+    try {
+      await axios.post(`${baseURL}/v2/api/user/check`);
+      setIsAuth(true);
+      await getProducts(); // 只在這裡抓
+    } catch {
+      setIsAuth(false);
+    }
+  }, [baseURL, getProducts]);
 
   // Modal表單
   const handleModalInputChange = e => {
@@ -114,9 +98,10 @@ function App() {
     if (!product.title) return '請輸入產品標題';
     if (!product.category) return '請輸入產品分類';
     if (!product.unit) return '請輸入產品單位';
-    if (!product.origin_price || product.origin_price === '')
+    if (product.origin_price === '' || Number(product.origin_price) <= 0)
       return '請輸入原價';
-    if (!product.price || product.price === '') return '請輸入售價';
+    if (product.price === '' || Number(product.price) <= 0) return '請輸入售價';
+
     return null;
   };
 
@@ -163,22 +148,18 @@ function App() {
 
   //刪除產品
   const deleteProduct = async () => {
-    try {
-      await axios.delete(
-        `${baseURL}/v2/api/${apiPath}/admin/product/${tempProduct.id}`
-      );
-    } catch (error) {
-      console.error(error);
-      setModalError(error.response?.data?.message || '刪除商品失敗');
-    }
+    return axios.delete(
+      `${baseURL}/v2/api/${apiPath}/admin/product/${tempProduct.id}`
+    );
   };
   const handleDeleteProduct = async () => {
     try {
       await deleteProduct();
-      getProducts();
-      handleCloseDeleteModal(); // 關閉 Modal、重新取得商品列表
+      await getProducts();
+      handleCloseDeleteModal();
     } catch (error) {
       console.error(error);
+      setModalError(error.response?.data?.message || '刪除失敗');
     }
   };
 
@@ -220,29 +201,20 @@ function App() {
 
   // useEffect 初始檢查登入
   useEffect(() => {
-    const token = document.cookie.replace(
-      /(?:(?:^|.*;\s*)hexToken_week3\s*=\s*([^;]*).*$)|^.*$/,
-      '$1'
-    );
-    axios.defaults.headers.common['Authorization'] = token;
-    checkLogin();
-  }, []);
+    const initAuth = async () => {
+      const token = document.cookie.replace(
+        /(?:(?:^|.*;\s*)hexToken_week3\s*=\s*([^;]*).*$)|^.*$/,
+        '$1'
+      );
 
-  useEffect(() => {
-    if (isAuth) {
-      getProducts();
-    }
-  }, [isAuth]);
+      axios.defaults.headers.common['Authorization'] = token;
 
-  //useEffect Modal
-  // useEffect(() => {
-  //   if (productModalRef.current) {
-  //     new Modal(productModalRef.current, { backdrop: false });
-  //   }
-  //   if (deleteModalRef.current) {
-  //     new Modal(deleteModalRef.current, { backdrop: false });
-  //   }
-  // }, [productModalRef, deleteModalRef]);
+      await checkLogin();
+    };
+
+    initAuth();
+  }, [checkLogin]);
+
   useEffect(() => {
     if (productModalRef.current) {
       new Modal(productModalRef.current, { backdrop: false });

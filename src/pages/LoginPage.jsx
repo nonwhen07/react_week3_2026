@@ -61,7 +61,7 @@ function LoginPage({ setIsAuth }) {
             id='username'
             name='username'
             type='email'
-            value={account.username || ''}
+            value={account.username}
             onChange={handleInputChange}
             className='form-control'
             placeholder='example@test.com'
