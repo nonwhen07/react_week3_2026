@@ -13,6 +13,8 @@ function App() {
   // 狀態管理 (State)
   const [isAuth, setIsAuth] = useState(false);
   const [products, setProducts] = useState([]);
+  // Modal 錯誤訊息狀態
+  const [modalError, setModalError] = useState('');
   //Modal 資料狀態的預設值
   const defaultModalState = {
     imageUrl: '',
@@ -99,54 +101,63 @@ function App() {
     }));
   };
 
+  // 傳值data時，需包裝成物件{data: {}}，
+  // 並將tempProduct的origin_price、price轉換為數字，is_enabled轉換為數字0或1
   const formatProductData = product => ({
     ...product,
     origin_price: Number(product.origin_price),
     price: Number(product.price),
     is_enabled: product.is_enabled ? 1 : 0,
   });
+  //做前端驗證函式 - 確保必填欄位都有填寫，並回傳對應的錯誤訊息
+  const validateProduct = product => {
+    if (!product.title) return '請輸入產品標題';
+    if (!product.category) return '請輸入產品分類';
+    if (!product.unit) return '請輸入產品單位';
+    if (!product.origin_price || product.origin_price === '')
+      return '請輸入原價';
+    if (!product.price || product.price === '') return '請輸入售價';
+    return null;
+  };
 
   // 新增產品
   const createProduct = async () => {
-    try {
-      // 傳值data時，需包裝成物件{data: {}}，並將tempProduct的origin_price、price轉換為數字，is_enabled轉換為數字0或1
-      await axios.post(`${baseURL}/v2/api/${apiPath}/admin/product`, {
-        data: formatProductData(tempProduct),
-      });
-    } catch (error) {
-      console.error(error);
-      alert('新增商品失敗');
-    }
+    return axios.post(`${baseURL}/v2/api/${apiPath}/admin/product`, {
+      data: formatProductData(tempProduct),
+    });
   };
   // 編輯產品
   const updateProduct = async () => {
-    try {
-      await axios.put(
-        `${baseURL}/v2/api/${apiPath}/admin/product/${tempProduct.id}`,
-        {
-          data: {
-            ...tempProduct,
-            origin_price: Number(tempProduct.origin_price),
-            price: Number(tempProduct.price),
-            is_enabled: tempProduct.is_enabled ? 1 : 0,
-          },
-        }
-      );
-    } catch (error) {
-      console.error(error);
-      alert('更新商品失敗');
-    }
+    return axios.put(
+      `${baseURL}/v2/api/${apiPath}/admin/product/${tempProduct.id}`,
+      {
+        data: formatProductData(tempProduct),
+      }
+    );
   };
+
+  // 更新產品 - 包含前端驗證、錯誤訊息顯示
   const handleUpdateProduct = async () => {
-    //const apiCall = modalMode === 'create' ? createProduct : updateProduct; // 判斷是新增還是編輯
+    setModalError('');
+
+    const validationError = validateProduct(tempProduct);
+
+    if (validationError) {
+      setModalError(validationError);
+      return;
+    }
+
     try {
-      // await createProduct();
-      // await apiCall();
-      await (modalMode === 'create' ? createProduct() : updateProduct()); // 179行 + 182行簡化
-      getProducts();
-      handleCloseProductModal(); // 關閉 Modal、重新取得商品列表
+      if (modalMode === 'create') {
+        await createProduct();
+      } else {
+        await updateProduct();
+      }
+
+      await getProducts();
+      handleCloseProductModal();
     } catch (error) {
-      console.error(error);
+      setModalError(error.response?.data?.message || '操作失敗');
     }
   };
 
@@ -158,7 +169,7 @@ function App() {
       );
     } catch (error) {
       console.error(error);
-      alert('刪除商品失敗');
+      setModalError(error.response?.data?.message || '刪除商品失敗');
     }
   };
   const handleDeleteProduct = async () => {
@@ -334,6 +345,9 @@ function App() {
               ></button>
             </div>
             <div className='modal-body p-4'>
+              {modalError && (
+                <div className='alert alert-danger'>{modalError}</div>
+              )}
               <div className='row g-4'>
                 <div className='col-md-4'>
                   <div className='mb-4'>
