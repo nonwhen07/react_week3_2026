@@ -6,7 +6,7 @@
 並練習前端專案在架構設計與責任分離上的實作方式。
 
 🔗 Live Demo  
-https://nonwhen07.github.io/react3_2026
+https://nonwhen07.github.io/react_week3_2026
 
 ---
 
